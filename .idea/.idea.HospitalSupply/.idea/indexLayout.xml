@@ -4,6 +4,7 @@
     <attachedFolders>
       <Path>../../doc</Path>
       <Path>../../out</Path>
+      <Path>../sql-scripts</Path>
     </attachedFolders>
     <explicitIncludes />
     <explicitExcludes />
