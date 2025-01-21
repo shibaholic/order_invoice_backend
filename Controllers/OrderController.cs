@@ -5,8 +5,8 @@ using Microsoft.AspNetCore.Mvc;
 namespace HospitalSupply.Controllers;
 
 [ApiController]
-[Route("order")]
-public class OrderController : BaseApiController
+[Route("[controller]")]
+public class OrderController : ControllerBase
 {
     private readonly IOrderRepository _orderRepository;
     private readonly IItemOrderRepository _itemOrderRepository;
@@ -23,11 +23,6 @@ public class OrderController : BaseApiController
     public async Task<IActionResult> GetAll()
     {
         var orders = await _orderRepository.GetAllOrders();
-        
-        // foreach (var order in orders)
-        // {
-        //     order.ItemOrders = await _itemOrderRepository.GetItemOrdersFromId(order.Id);
-        // }
         
         return Ok(orders);
     }

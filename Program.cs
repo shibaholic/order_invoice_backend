@@ -29,6 +29,7 @@ if (string.IsNullOrEmpty(connectionString))
 builder.Services.AddScoped<IDatabase>(provider => new Database(connectionString));
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<IItemOrderRepository, ItemOrderRepository>();
+builder.Services.AddScoped<IInvoiceRepository, InvoiceRepository>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
