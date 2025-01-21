@@ -1,3 +1,4 @@
+using System.Collections.Specialized;
 using HospitalSupply.Entities;
 using HospitalSupply.Repositories;
 using Microsoft.AspNetCore.Mvc;
@@ -78,5 +79,33 @@ public class OrderController : ControllerBase
         _unitOfWork.Commit();
         
         return Ok();
+    }
+
+    public record UpdateOrderRequest
+    {
+        public Guid InvoiceId { get; init; }
+    }
+
+    [HttpPut("{orderId}")]
+    public async Task<IActionResult> Update([FromRoute] Guid orderId, [FromBody] UpdateOrderRequest request)
+    {
+        var order = await _orderRepository.GetOrder(orderId);
+        if(order == null) return NotFound();
+        if (order.InvoiceId != null) return BadRequest("Order is already linked to an Invoice");
+
+        if(request.InvoiceId == null) return BadRequest();
+        order.InvoiceId = request.InvoiceId;
+
+        try
+        {
+            var result = await _orderRepository.UpdateAsync(order);
+            if (result != 1) return StatusCode(500);
+        }
+        catch (Exception e)
+        {
+            return StatusCode(500, "Server Error with Order.");
+        }
+
+        return Ok(order);
     }
 }

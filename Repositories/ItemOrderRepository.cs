@@ -24,16 +24,17 @@ public class ItemOrderRepository: IItemOrderRepository
 
         for (int i = 0; i < itemOrders.Count; i++)
         {
-            values.Add($"(@ItemName{i}, @Quantity{i}, @CurrencyAmount{i}, @CurrencyCode{i}, @OrderId{i})");
+            values.Add($"(@ItemName{i}, @Quantity{i}, @CurrencyAmount{i}, @CurrencyCode{i}, @OrderId{i}, @InvoiceId{i})");
             parameters.Add($"ItemName{i}", itemOrders[i].ItemName);
             parameters.Add($"Quantity{i}", itemOrders[i].Quantity);
             parameters.Add($"CurrencyAmount{i}", itemOrders[i].CurrencyAmount);
             parameters.Add($"CurrencyCode{i}", itemOrders[i].CurrencyCode);
             parameters.Add($"OrderId{i}", itemOrders[i].OrderId);
+            parameters.Add($"InvoiceId{i}", itemOrders[i].InvoiceId);
         }
 
         var query = $@"
-            INSERT INTO ItemOrders (ItemName, Quantity, CurrencyAmount, CurrencyCode, OrderId) VALUES 
+            INSERT INTO ItemOrders (ItemName, Quantity, CurrencyAmount, CurrencyCode, OrderId, InvoiceId) VALUES 
             {string.Join(", ", values)}
             ";
 

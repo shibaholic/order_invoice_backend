@@ -6,7 +6,7 @@ public class Invoice
     public string FileName { get; set; }
     public byte[] FileData { get; set; }
     public string ContentType { get; set; }
-    public List<ItemOrder> ItemOrders { get; set; }
+    public List<ItemOrder> ItemOrders { get; set; } = new List<ItemOrder>();
     public DateTime DateCreated { get; set; }
     public bool Scanned { get; set; }
     public bool Linked { get; set; }
