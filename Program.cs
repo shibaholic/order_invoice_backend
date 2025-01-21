@@ -1,4 +1,5 @@
 using HospitalSupply.Repositories;
+using HospitalSupply.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,6 +27,19 @@ if (string.IsNullOrEmpty(connectionString))
     System.Environment.Exit(1);
 }
 
+// Services
+string? uiPathPAT = builder.Configuration["Secrets:UiPathPAT"];
+string? apiTriggerSlug = builder.Configuration["Secrets:ApiTriggerSlug"];
+if (string.IsNullOrEmpty(uiPathPAT) || string.IsNullOrEmpty(apiTriggerSlug))
+{
+    Console.WriteLine("No UiPath PAT found, or no ApiTriggerSlug found.");
+    System.Environment.Exit(1);
+}
+Console.WriteLine($"uiPathPAT: {uiPathPAT}");
+
+builder.Services.AddScoped<IUiPathApiClient>(provider => new UiPathApiClient(uiPathPAT, apiTriggerSlug));
+
+// Repository
 builder.Services.AddScoped<IDatabase>(provider => new Database(connectionString));
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<IItemOrderRepository, ItemOrderRepository>();

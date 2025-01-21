@@ -1,5 +1,6 @@
 using HospitalSupply.Entities;
 using HospitalSupply.Repositories;
+using HospitalSupply.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HospitalSupply.Controllers;
@@ -9,10 +10,12 @@ namespace HospitalSupply.Controllers;
 public class InvoiceController : ControllerBase
 {
     private readonly IInvoiceRepository _invoiceRepository;
+    private readonly IUiPathApiClient _apiClient;
 
-    public InvoiceController(IInvoiceRepository invoiceRepository)
+    public InvoiceController(IInvoiceRepository invoiceRepository, IUiPathApiClient apiClient)
     {
         _invoiceRepository = invoiceRepository;
+        _apiClient = apiClient;
     }
 
     public record InvoiceRequest
@@ -51,10 +54,11 @@ public class InvoiceController : ControllerBase
 
             if (result != 1) return StatusCode(500);
 
-            // TODO: send request to UiPath Robot to begin it's Matching.
+            // send request to UiPath Robot to begin it's OrderInvoiceCheck.
+            await _apiClient.StartOrderInvoiceCheck();
             
             var returnInvoice = invoice;
-            returnInvoice.FileData = null;
+            returnInvoice.FileData = null!;
 
             return Ok(returnInvoice);
         }
@@ -62,5 +66,12 @@ public class InvoiceController : ControllerBase
         {
             return StatusCode(500, "Unexpected server error.");
         }
+    }
+
+    [HttpPost("trigger-job")]
+    public async Task<IActionResult> TriggerJob()
+    {
+        var thing = await _apiClient.StartOrderInvoiceCheck();
+        return Ok();
     }
 }
