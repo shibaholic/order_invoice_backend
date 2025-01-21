@@ -1,9 +1,11 @@
 using HospitalSupply.Entities;
+using Npgsql;
 
 namespace HospitalSupply.Repositories;
 
 public interface IInvoiceRepository
 {
+    Task<List<InvoiceDto>> GetInvoiceDtosAsync();
     Task<int> CreateAsync(Invoice invoice);
 }
 
@@ -13,6 +15,21 @@ public class InvoiceRepository : IInvoiceRepository
     public InvoiceRepository(IDatabase database)
     {
         _database = database;
+    }
+
+    public async Task<List<InvoiceDto>> GetInvoiceDtosAsync()
+    {
+        var query = @"SELECT Id, DateCreated, Scanned, Linked FROM Invoices ORDER BY DateCreated DESC";
+
+        var result = await _database.ExecuteQueryAsync(query, reader => new InvoiceDto
+        {
+            Id = reader.GetGuid(0),
+            DateCreated= reader.GetDateTime(1),
+            Scanned = reader.GetBoolean(2),
+            Linked = reader.GetBoolean(3),
+        });
+
+        return result;
     }
     
     public async Task<int> CreateAsync(Invoice invoice)

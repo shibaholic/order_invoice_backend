@@ -20,7 +20,7 @@ public class Database : IDatabase
     public Database(string connectionString)
     {
         this.connectionString = connectionString;
-        _connection = new NpgsqlConnection(connectionString);
+        _connection = new Npgsql.NpgsqlConnection(connectionString);
         _connection.Open();
     }
 

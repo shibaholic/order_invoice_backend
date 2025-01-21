@@ -22,6 +22,20 @@ public class InvoiceController : ControllerBase
     {
         public IFormFile File { get; set; }
     }
+
+    [HttpGet]
+    [Route("/Invoices")]
+    public async Task<IActionResult> GetAll()
+    {
+        var result = await _invoiceRepository.GetInvoiceDtosAsync();
+
+        foreach (var invoice in result)
+        {
+            Console.WriteLine($"invoice.Id, invoice.Scanned, invoice.Linked, invoice.DateCreated");
+        }
+        
+        return Ok(result);
+    }
     
     [HttpPost]
     public async Task<IActionResult> CreateInvoice([FromForm] InvoiceRequest request)
@@ -46,7 +60,9 @@ public class InvoiceController : ControllerBase
                 FileName = request.File.FileName,
                 FileData = fileData,
                 ContentType = request.File.ContentType,
-                DateCreated = DateTime.Now
+                DateCreated = DateTime.Now,
+                Scanned = false,
+                Linked = false
             };
 
             var result = await _invoiceRepository.CreateAsync(invoice);

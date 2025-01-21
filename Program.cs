@@ -18,7 +18,9 @@ if (System.Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Deve
 }
 else
 {
-    throw new NotImplementedException("Need to implement production environment connection string");
+    connectionString = builder.Configuration["Secrets:ProdDatabase"];
+    Console.WriteLine($"prod connection string: {connectionString}");
+    // throw new NotImplementedException("Need to implement production environment connection string");
 }
 
 if (string.IsNullOrEmpty(connectionString))
@@ -55,9 +57,10 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    
 }
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
 
