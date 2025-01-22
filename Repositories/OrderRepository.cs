@@ -34,7 +34,7 @@ public class OrderRepository : IOrderRepository
     public async Task<List<Order>> GetAllOrders()
     {
         var query = @"SELECT
-            myOrder.Id as myOrderId, myOrder.SupplierName, myOrder.InvoiceId as myOrderInvoiceId,
+            myOrder.Id as myOrderId, myOrder.SupplierName, myOrder.InvoiceId as myOrderInvoiceId, myOrder.DateCreated,
             item.Id as itemId, item.ItemName, item.Quantity, item.CurrencyAmount, item.CurrencyCode, item.OrderId, item.InvoiceId as itemInvoiceId
             FROM Orders myOrder 
             LEFT JOIN ItemOrders item ON myOrder.Id = item.OrderId";
@@ -55,7 +55,8 @@ public class OrderRepository : IOrderRepository
                         {
                             Id = orderId,
                             SupplierName = reader.GetString(1),
-                            InvoiceId = reader.IsDBNull(2) ? null : reader.GetGuid(2)
+                            InvoiceId = reader.IsDBNull(2) ? null : reader.GetGuid(2),
+                            DateCreated = reader.GetDateTime(3),
                         };
                         orderDict.Add(orderId, order);
                     }
@@ -64,13 +65,13 @@ public class OrderRepository : IOrderRepository
                     {
                         order.ItemOrders.Add(new ItemOrder
                         {
-                            Id = reader.GetInt32(3),
-                            ItemName = reader.GetString(4),
-                            Quantity = reader.GetInt32(5),
-                            CurrencyAmount = reader.GetDecimal(6),
-                            CurrencyCode = reader.GetString(7),
+                            Id = reader.GetInt32(4),
+                            ItemName = reader.GetString(5),
+                            Quantity = reader.GetInt32(6),
+                            CurrencyAmount = reader.GetString(7),
+                            CurrencyCode = reader.GetString(8),
                             OrderId = order.Id,
-                            InvoiceId = reader.IsDBNull(8) ? null : reader.GetGuid(8)
+                            InvoiceId = reader.IsDBNull(10) ? null : reader.GetGuid(10)
                         });
                     }
                 }

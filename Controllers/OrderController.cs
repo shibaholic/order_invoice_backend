@@ -31,15 +31,15 @@ public class OrderController : ControllerBase
     public record CreateOrderRequest
     {
         public string SupplierName { get; init; }
-        public List<ItemOrderRequest> ItemOrders { get; init; }
+        public List<ItemOrderRequest1> ItemOrders { get; init; }
     }
 
-    public record ItemOrderRequest
+    public record ItemOrderRequest1
     {
         public int Serial { get; init; }
         public string ItemName { get; init; }
         public int Quantity { get; init; }
-        public decimal? CurrencyAmount { get; init; }
+        public string? CurrencyAmount { get; init; }
         public string? CurrencyCode { get; init; }
     }
     
@@ -57,7 +57,8 @@ public class OrderController : ControllerBase
                 Quantity = itemOrderRequest.Quantity,
                 CurrencyAmount = itemOrderRequest.CurrencyAmount,
                 CurrencyCode = itemOrderRequest.CurrencyCode,
-                OrderId = order.Id
+                OrderId = order.Id,
+                InvoiceId = null
             });
         }
         order.ItemOrders = itemOrders;
@@ -78,7 +79,7 @@ public class OrderController : ControllerBase
         
         _unitOfWork.Commit();
         
-        return Ok();
+        return Ok(order);
     }
 
     public record UpdateOrderRequest

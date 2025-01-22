@@ -37,7 +37,6 @@ if (string.IsNullOrEmpty(uiPathPAT) || string.IsNullOrEmpty(apiTriggerSlug))
     Console.WriteLine("No UiPath PAT found, or no ApiTriggerSlug found.");
     System.Environment.Exit(1);
 }
-Console.WriteLine($"uiPathPAT: {uiPathPAT}");
 
 builder.Services.AddScoped<IUiPathApiClient>(provider => new UiPathApiClient(uiPathPAT, apiTriggerSlug));
 

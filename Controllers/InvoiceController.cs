@@ -11,15 +11,17 @@ public class InvoiceController : ControllerBase
 {
     private readonly IInvoiceRepository _invoiceRepository;
     private readonly IItemOrderRepository _itemOrderRepository;
+    private readonly IOrderRepository _orderRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IUiPathApiClient _apiClient;
 
-    public InvoiceController(IInvoiceRepository invoiceRepository, IUiPathApiClient apiClient, IItemOrderRepository itemOrderRepository, IUnitOfWork unitOfWork)
+    public InvoiceController(IInvoiceRepository invoiceRepository, IUiPathApiClient apiClient, IItemOrderRepository itemOrderRepository, IUnitOfWork unitOfWork, IOrderRepository orderRepository)
     {
         _invoiceRepository = invoiceRepository;
         _apiClient = apiClient;
         _itemOrderRepository = itemOrderRepository;
         _unitOfWork = unitOfWork;
+        _orderRepository = orderRepository;
     }
 
     public record CreateInvoiceRequest
@@ -55,7 +57,7 @@ public class InvoiceController : ControllerBase
         var result = await _invoiceRepository.GetInvoiceAsync(invoiceId);
         if(result == null) return NotFound();
         
-        return File(result.FileData, "application/pdf", result.FileName);
+        return File(result.FileData, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", result.FileName);
     }
     
     [HttpPost]
@@ -64,7 +66,7 @@ public class InvoiceController : ControllerBase
         if (request.File == null! || request.File.Length == 0)
             return BadRequest("No file was uploaded.");
 
-        if (request.File.ContentType != "application/pdf") return BadRequest("File must be pdf.");
+        if (request.File.ContentType != "application/vnd.openxmlformats-officedocument.wordprocessingml.document") return BadRequest("File must be docx.");
 
         try
         {
@@ -105,18 +107,17 @@ public class InvoiceController : ControllerBase
         }
     }
 
-    public record ItemOrderRequests
+    public record ItemOrderRequest2
     {
         public string ItemName { get; init; }
         public int Quantity { get; init; }
-        public decimal? CurrencyAmount { get; init; }
+        public string? CurrencyAmount { get; init; }
         public string? CurrencyCode { get; init; }
     }
     
     public record UpdateInvoiceRequest
     {
-        public List<ItemOrderRequests> ItemOrders { get; init; }
-        public bool Linked { get; init; }
+        public List<ItemOrderRequest2> ItemOrders { get; init; }
     }
     
     [HttpPut("{invoiceId}")]
@@ -126,10 +127,12 @@ public class InvoiceController : ControllerBase
         if(invoice == null) return NotFound();
         if (invoice.Linked) return BadRequest("Invoice is already linked to an Order.");
         
-        var itemOrders = new List<ItemOrder>();
+        invoice.Scanned = true;
+        
+        var invoiceItemOrders = new List<ItemOrder>();
         foreach (var item in request.ItemOrders)
         {
-            itemOrders.Add(new ItemOrder
+            invoiceItemOrders.Add(new ItemOrder
             {
                 ItemName = item.ItemName,
                 Quantity = item.Quantity,
@@ -138,18 +141,70 @@ public class InvoiceController : ControllerBase
                 InvoiceId = invoiceId
             });
         }
-
-        invoice.Scanned = true;
-        invoice.Linked = request.Linked;
-
+        
+        // determine if the order's itemOrders matches the invoice's itemOrders
+        var orders = await _orderRepository.GetAllOrders();
+        var recentOrder = orders.FirstOrDefault();
+        if(recentOrder == null) return BadRequest("No order was found.");
+        if (recentOrder.InvoiceId != null) return BadRequest("Most recent Order is already linked.");
+        
+        // match
+        var invoiceItemOrdersC = invoiceItemOrders.Count;
+        var recentOrderItemOrdersC = recentOrder.ItemOrders.Count;
+        
+        // assume not linked
+        invoice.Linked = false;
+        
+        var discrepancy = false;
+        if (recentOrderItemOrdersC == invoiceItemOrdersC)
+        {
+            for (int i = 0; i < recentOrderItemOrdersC; i++)
+            {
+                var oItemOrder = recentOrder.ItemOrders[i];
+                var iItemORder = invoiceItemOrders[i];
+                Console.WriteLine($"invoice: {iItemORder.ItemName} - {iItemORder.Quantity} - {iItemORder.CurrencyAmount} - {iItemORder.CurrencyCode}");
+                Console.WriteLine($"order  : {oItemOrder.ItemName} - {oItemOrder.Quantity} - {oItemOrder.CurrencyAmount} - {oItemOrder.CurrencyCode}");
+                if (!(oItemOrder.ItemName == iItemORder.ItemName
+                      && oItemOrder.Quantity == iItemORder.Quantity
+                      && oItemOrder.CurrencyAmount == iItemORder.CurrencyAmount
+                      && oItemOrder.CurrencyCode == iItemORder.CurrencyCode))
+                {
+                    discrepancy = true;
+                    break;
+                }
+            }
+        }
+        else
+        {
+            discrepancy = true;
+        }
+        
+        if (!discrepancy)
+        {
+            invoice.Linked = true;
+            recentOrder.InvoiceId = invoice.Id;
+            Console.WriteLine("No discrepancy");
+        }
+        else
+        {
+            Console.WriteLine("Discrepancy found");
+        }
+        
         _unitOfWork.BeginTransaction();
         
         var invoiceResult = await _invoiceRepository.UpdateAsync(invoice);
         if(invoiceResult != 1) return StatusCode(500, "Server Error with Invoice.");
         
-        var itemOrdersResult = await _itemOrderRepository.AddItemOrders(itemOrders);
+        var itemOrdersResult = await _itemOrderRepository.AddItemOrders(invoiceItemOrders);
         if(itemOrdersResult != request.ItemOrders.Count) return StatusCode(500, "Server Error with ItemOrders.");
 
+        if (!discrepancy)
+        {
+            // update Order
+            var orderResult = await _orderRepository.UpdateAsync(recentOrder);
+            if(orderResult != 1) return StatusCode(500, "Server Error with Order.");
+        }
+        
         _unitOfWork.Commit();
 
         invoice.FileData = null;
