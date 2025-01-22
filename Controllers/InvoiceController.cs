@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace HospitalSupply.Controllers;
 
 [ApiController]
-[Route("[controller]")]
+[Route("api/[controller]")]
 public class InvoiceController : ControllerBase
 {
     private readonly IInvoiceRepository _invoiceRepository;
@@ -30,7 +30,7 @@ public class InvoiceController : ControllerBase
     }
 
     [HttpGet]
-    [Route("/Invoices")]
+    [Route("/api/Invoices")]
     public async Task<IActionResult> GetAll()
     {
         var result = await _invoiceRepository.GetInvoiceDtosAsync();
@@ -144,6 +144,7 @@ public class InvoiceController : ControllerBase
         
         // determine if the order's itemOrders matches the invoice's itemOrders
         var orders = await _orderRepository.GetAllOrders();
+        orders = orders.OrderByDescending(order => order.DateCreated).ToList();
         var recentOrder = orders.FirstOrDefault();
         if(recentOrder == null) return BadRequest("No order was found.");
         if (recentOrder.InvoiceId != null) return BadRequest("Most recent Order is already linked.");

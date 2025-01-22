@@ -51,6 +51,16 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddCors(opt =>
+{
+    opt.AddDefaultPolicy(builder => builder
+        .WithOrigins("http://localhost:5173")
+        .AllowAnyMethod()
+        .AllowAnyHeader()
+        .AllowCredentials()
+    );
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -58,8 +68,21 @@ if (app.Environment.IsDevelopment())
 {
     
 }
-app.UseSwagger();
-app.UseSwaggerUI();
+
+app.UseStaticFiles(); 
+
+app.UseSwagger(c =>
+{
+    c.RouteTemplate = "api/swagger/{documentName}/swagger.json"; // Sets the route for Swagger JSON
+});
+
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/api/swagger/v1/swagger.json", "My API V1");
+    c.RoutePrefix = "api/swagger"; // Sets the prefix for Swagger UI
+});
+
+app.UseCors();
 
 app.UseHttpsRedirection();
 
